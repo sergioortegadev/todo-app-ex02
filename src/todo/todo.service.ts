@@ -10,52 +10,63 @@ export class TodoService {
     private todoRepository: Repository<Todo>,
   ) {}
 
-  async find(title?: string, description?: string, category?: string) {
-    if (
-      title.trim().length < 3 ||
-      description.trim().length < 3 ||
-      category.trim().length < 3
-    ) {
-      return {
-        message: 'You must enter at least 3 characters in the search.',
-      };
-    }
-
+  async find(query?: object) {
     let data: Array<object> = [];
 
-    if (
-      title !== undefined ||
-      description !== undefined ||
-      category !== undefined
-    ) {
-      if (title) {
-        data = await this.todoRepository.find({
-          where: { title: Like(`%${title}%`) },
-        });
-      }
-      if (description) {
-        data = await this.todoRepository.find({
-          where: { description: Like(`%${description}%`) },
-        });
-      }
-      if (category) {
-        data = await this.todoRepository.find({
-          where: { category: category },
-        });
+    if (query) {
+      const searchQuery = Object.keys(query)[0];
+
+      if (searchQuery.trim().length < 3) {
+        return {
+          message: 'You must enter at least 3 characters in the search.',
+        };
       }
 
-      if (data.length === 0) return { message: 'No notes found in DB.' };
+      switch (searchQuery) {
+        case 'title':
+          data = await this.todoRepository.find({
+            where: { title: Like(`%${Object.values(query)[0]}%`) },
+          });
+          break;
 
-      return {
-        message: 'Note/s obtained correctly from DB.',
-        data: data,
-      };
+        case 'description':
+          data = await this.todoRepository.find({
+            where: { description: Like(`%${Object.values(query)[0]}%`) },
+          });
+          break;
+
+        case 'category':
+          data = await this.todoRepository.find({
+            where: { category: Object.values(query)[0] },
+          });
+          break;
+
+        case 'isCompleted':
+          if (Object.values(query)[0] === 'true') {
+            data = await this.todoRepository.find({
+              where: { isCompleted: true },
+            });
+          } else {
+            data = await this.todoRepository.find({
+              where: { isCompleted: false },
+            });
+          }
+          break;
+
+        default:
+          return {
+            message: `${data.length}` + ' Note/s obtained correctly from DB.',
+            data: data,
+          };
+      }
+    } else {
+      data = await this.todoRepository.find();
     }
 
-    data = await this.todoRepository.find();
+    if (data.length === 0) return { message: 'No notes found in DB.' };
 
     return {
-      message: 'Data obtained correctly from DB. Listing all notes.',
+      message: `Data obtained ok from DB. Listing ${data.length} notes.`,
       data: data,
     };
   }
@@ -74,7 +85,7 @@ export class TodoService {
       return { message: 'Error: missing title, description, or category.' };
 
     return {
-      message: `Note with title: '${todo.title}' entered correctly into DB`,
+      message: `Note with title: '${todo.title}' entered ok into DB`,
       data: await this.todoRepository.save(todo),
     };
   }
@@ -117,7 +128,7 @@ export class TodoService {
     if (todo) {
       this.todoRepository.delete(id).then(() => {});
       return {
-        message: `Note with id: ${todo.id} and title: '${todo.title}' deleted into DB`,
+        message: `Note with id: ${todo.id} and title: '${todo.title}' deleted ok into DB`,
         data: await this.todoRepository.find(),
       };
     } else {

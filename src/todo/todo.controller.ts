@@ -13,7 +13,7 @@ import {
 import { TodoService } from './todo.service';
 import { Request, Response } from 'express';
 
-@Controller('/todo')
+@Controller('/v1/todo')
 export class TodoController {
   constructor(private readonly todoService: TodoService) {}
 
@@ -23,22 +23,31 @@ export class TodoController {
     @Req() request: Request,
     @Res() response: Response,
   ) {
-    /* console.log(
-      `  > ${request.method} a ${request.url} desde: ${request.connection.remoteAddress}`,
-    ); */
-
     let data;
+
     (async () => {
       if (query.title !== undefined) {
-        data = await this.todoService.find(query.title);
+        data = await this.todoService.find(query);
       }
       if (query.description !== undefined) {
-        data = await this.todoService.find(query.description);
+        data = await this.todoService.find(query);
       }
       if (query.category !== undefined) {
-        data = await this.todoService.find(query.category);
+        data = await this.todoService.find(query);
+      }
+      if (query.isCompleted !== undefined) {
+        data = await this.todoService.find(query);
       }
 
+      if (data) {
+        if (data.message === 'No notes found in DB.') {
+          response.status(207).json(data);
+        } else {
+          response.status(200).json(data);
+        }
+        return data;
+      }
+      data = await this.todoService.find();
       response.status(200).json(data);
       return data;
     })();
@@ -54,12 +63,12 @@ export class TodoController {
   ) {
     (async () => {
       const data = await this.todoService.create(title, description, category);
-      response.status(201).json(data);
+      if (data.data) {
+        response.status(201).json(data);
+      } else {
+        response.status(207).json(data);
+      }
     })();
-
-    console.log(
-      `  > ${request.method} a ${request.url} desde: ${request.connection.remoteAddress}`,
-    );
   }
 
   @Put(':id')
@@ -82,11 +91,7 @@ export class TodoController {
       );
 
       if (data.data) response.status(201).json(data);
-      else response.status(404).json(data);
-
-      console.log(
-        `  > ${request.method} a ${request.url} desde: ${request.connection.remoteAddress} - ${data.message}`,
-      );
+      else response.status(207).json(data);
     })();
   }
 
@@ -100,11 +105,11 @@ export class TodoController {
       const data = await this.todoService.delete(id);
 
       if (data.data) response.status(200).json(data);
-      else response.status(404).json(data);
-
-      console.log(
-        `  > ${request.method} a ${request.url} desde: ${request.connection.remoteAddress} - ${data.message}`,
-      );
+      else response.status(207).json(data);
     })();
   }
 }
+
+/* console.log(
+      `  > ${request.method} a ${request.url} desde: ${request.connection.remoteAddress}`,
+    ); */

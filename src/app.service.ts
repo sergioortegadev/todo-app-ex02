@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 @Injectable()
 export class AppService {
   getHello(): string {
-    return 'Hello World!';
+    return 'Server on';
   }
   getHealthcheck() {
     return `<html><head><meta name="color-scheme" content="light dark">
