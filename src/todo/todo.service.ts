@@ -113,7 +113,7 @@ export class TodoService {
         todo.category = category;
       }
       return {
-        message: `Note with id: ${todo.id} and title: '${todo.title}' updated into DB`,
+        message: `Note with id: ${todo.id} and title: '${todo.title}' updated ok into DB`,
         data: await this.todoRepository.save(todo),
       };
     } else {
@@ -126,10 +126,13 @@ export class TodoService {
   async delete(id: number) {
     const todo = await this.todoRepository.findOne({ where: { id: id } });
     if (todo) {
-      this.todoRepository.delete(id).then(() => {});
+      await this.todoRepository.delete(id).then(() => {});
+
       return {
         message: `Note with id: ${todo.id} and title: '${todo.title}' deleted ok into DB`,
-        data: await this.todoRepository.find(),
+        data: (await this.todoRepository.find()).filter(
+          (note) => note.id !== id,
+        ),
       };
     } else {
       return {
